@@ -17,8 +17,8 @@ jobs:
       - name: Release Apk Sign
         run: |
           if [ -n "${{ secrets.RELEASE_KEY_ALIAS }}" ] && [ -n "${{ secrets.RELEASE_STORE_PASSWORD }}" ] && [ -n "${{ secrets.RELEASE_KEY_PASSWORD }}" ]; then
-            cp -f $GITHUB_WORKSPACE/.github/workflows/TVBoxOSC.jks $GITHUB_WORKSPACE/app/TVBoxOSC.jks
-            sed -i '$a\RELEASE_STORE_FILE=./TVBoxOSC.jks'                             $GITHUB_WORKSPACE/gradle.properties
+            cp -f $GITHUB_WORKSPACE/.github/workflows/smartpoint.jks $GITHUB_WORKSPACE/app/smartpoint.jks
+            sed -i '$a\RELEASE_STORE_FILE=./smartpoint.jks'                           $GITHUB_WORKSPACE/gradle.properties
             sed -i "$a\RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}"            $GITHUB_WORKSPACE/gradle.properties
             sed -i "$a\RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}"  $GITHUB_WORKSPACE/gradle.properties
             sed -i "$a\RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}"      $GITHUB_WORKSPACE/gradle.properties
