@@ -18,6 +18,7 @@ jobs:
             sed -i "$a\RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}"            $GITHUB_WORKSPACE/gradle.properties
             sed -i "$a\RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}"  $GITHUB_WORKSPACE/gradle.properties
             sed -i "$a\RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}"      $GITHUB_WORKSPACE/gradle.properties
+            echo "UndCover"
           fi
       - name: Build With Gradle
         run: |
