@@ -1,9 +1,7 @@
 package com.github.tvbox.osc.ui.fragment;
 
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -12,21 +10,20 @@ import androidx.recyclerview.widget.DiffUtil;
 
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.api.ApiConfig;
+import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.base.BaseLazyFragment;
 import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.bean.SourceBean;
 import com.github.tvbox.osc.ui.activity.SettingActivity;
 import com.github.tvbox.osc.ui.adapter.SelectDialogAdapter;
 import com.github.tvbox.osc.ui.dialog.AboutDialog;
+import com.github.tvbox.osc.ui.dialog.ApiDialog;
 import com.github.tvbox.osc.ui.dialog.SelectDialog;
 import com.github.tvbox.osc.ui.dialog.XWalkInitDialog;
 import com.github.tvbox.osc.util.FastClickCheckUtil;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.github.tvbox.osc.util.XWalkUtils;
-import com.hjq.permissions.OnPermissionCallback;
-import com.hjq.permissions.Permission;
-import com.hjq.permissions.XXPermissions;
 import com.orhanobut.hawk.Hawk;
 
 import org.jetbrains.annotations.NotNull;
@@ -89,36 +86,6 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 tvDebugOpen.setText(Hawk.get(HawkConfig.DEBUG_OPEN, false) ? "已打开" : "已关闭");
             }
         });
-        findViewById(R.id.llStorage).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FastClickCheckUtil.check(v);
-                if (XXPermissions.isGranted(requireContext(), Permission.Group.STORAGE)) {
-                    Toast.makeText(requireContext(), "已获得存储权限", Toast.LENGTH_SHORT).show();
-                } else {
-                    XXPermissions.with(mActivity)
-                            .permission(Permission.Group.STORAGE)
-                            .request(new OnPermissionCallback() {
-                                @Override
-                                public void onGranted(List<String> permissions, boolean all) {
-                                    if (all) {
-                                        Toast.makeText(requireContext(), "已获得存储权限", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-
-                                @Override
-                                public void onDenied(List<String> permissions, boolean never) {
-                                    if (never) {
-                                        Toast.makeText(requireContext(), "获取存储权限失败,请在系统设置中开启", Toast.LENGTH_SHORT).show();
-                                        XXPermissions.startPermissionActivity(mActivity, permissions);
-                                    } else {
-                                        Toast.makeText(requireContext(), "获取存储权限失败", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                }
-            }
-        });
         findViewById(R.id.llParseWebVew).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -129,12 +96,13 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 if (!useSystem) {
                     Toast.makeText(mContext, "注意: XWalkView只适用于部分低Android版本，Android4.4以上推荐使用系统自带", Toast.LENGTH_LONG).show();
                     if (!XWalkUtils.xWalkLibExist(mContext)) {
-                        XWalkInitDialog dialog = new XWalkInitDialog().setOnListener(new XWalkInitDialog.OnListener() {
+                        XWalkInitDialog dialog = new XWalkInitDialog(mContext);
+                        dialog.setOnListener(new XWalkInitDialog.OnListener() {
                             @Override
                             public void onchange() {
                                 tvXWalkDown.setText(XWalkUtils.xWalkLibExist(mContext) ? "已下载" : "未下载");
                             }
-                        }).build(mContext);
+                        });
                         dialog.show();
                     }
                 }
@@ -145,12 +113,13 @@ public class ModelSettingFragment extends BaseLazyFragment {
             @Override
             public void onClick(View v) {
                 FastClickCheckUtil.check(v);
-                XWalkInitDialog dialog = new XWalkInitDialog().setOnListener(new XWalkInitDialog.OnListener() {
+                XWalkInitDialog dialog = new XWalkInitDialog(mContext);
+                dialog.setOnListener(new XWalkInitDialog.OnListener() {
                     @Override
                     public void onchange() {
                         tvXWalkDown.setText(XWalkUtils.xWalkLibExist(mContext) ? "已下载" : "未下载");
                     }
-                }).build(mContext);
+                });
                 dialog.show();
             }
         });
@@ -158,7 +127,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
             @Override
             public void onClick(View v) {
                 FastClickCheckUtil.check(v);
-                AboutDialog dialog = new AboutDialog().build(mActivity);
+                AboutDialog dialog = new AboutDialog(mActivity);
                 dialog.show();
             }
         });
@@ -170,7 +139,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 if (sites.size() > 0) {
                     SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
                     dialog.setTip("请选择首页数据源");
-                    SelectDialogAdapter<SourceBean> selectAdapter = new SelectDialogAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {
+                    dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {
                         @Override
                         public void click(SourceBean value, int pos) {
                             ApiConfig.get().setSourceBean(value);
@@ -191,9 +160,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                         public boolean areContentsTheSame(@NonNull @NotNull SourceBean oldItem, @NonNull @NotNull SourceBean newItem) {
                             return oldItem.getKey().equals(newItem.getKey());
                         }
-                    });
-                    selectAdapter.setData(sites, sites.indexOf(ApiConfig.get().getHomeSourceBean()));
-                    dialog.setAdapter(selectAdapter);
+                    }, sites, sites.indexOf(ApiConfig.get().getHomeSourceBean()));
                     dialog.show();
                 }
             }
@@ -202,25 +169,21 @@ public class ModelSettingFragment extends BaseLazyFragment {
             @Override
             public void onClick(View v) {
                 FastClickCheckUtil.check(v);
-                AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
-                builder.setTitle("请输入配置地址");
-                final EditText edit = new EditText(mActivity);
-                edit.setText(tvApi.getText());
-                builder.setView(edit);
-                builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                ApiDialog dialog = new ApiDialog(mActivity);
+                dialog.setOnListener(new ApiDialog.OnListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String url = edit.getText().toString().trim();
-                        Hawk.put(HawkConfig.API_URL, url);
-                        tvApi.setText(url);
+                    public void onchange(String api) {
+                        Hawk.put(HawkConfig.API_URL, api);
+                        tvApi.setText(api);
                     }
                 });
-                builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onDismiss(DialogInterface dialog) {
+                        ((BaseActivity)mActivity).hideSysBar();
                     }
                 });
-                builder.create().show();
+                dialog.show();
             }
         });
         findViewById(R.id.llMediaCodec).setOnClickListener(new View.OnClickListener() {
@@ -240,9 +203,9 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     }
                 }
 
-                SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
-                dialog.setTip("请选择Ijk解码");
-                SelectDialogAdapter<IJKCode> selectAdapter = new SelectDialogAdapter(new SelectDialogAdapter.SelectDialogInterface<IJKCode>() {
+                SelectDialog<IJKCode> dialog = new SelectDialog<>(mActivity);
+                dialog.setTip("请选择IJK解码");
+                dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<IJKCode>() {
                     @Override
                     public void click(IJKCode value, int pos) {
                         value.selected(true);
@@ -263,9 +226,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     public boolean areContentsTheSame(@NonNull @NotNull IJKCode oldItem, @NonNull @NotNull IJKCode newItem) {
                         return oldItem.getName().equals(newItem.getName());
                     }
-                });
-                selectAdapter.setData(ijkCodes, defaultPos);
-                dialog.setAdapter(selectAdapter);
+                }, ijkCodes, defaultPos);
                 dialog.show();
             }
         });
@@ -278,9 +239,9 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 players.add(0);
                 players.add(1);
                 players.add(2);
-                SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
+                SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择默认播放器");
-                SelectDialogAdapter<Integer> selectAdapter = new SelectDialogAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
+                dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {
                         Hawk.put(HawkConfig.PLAY_TYPE, value);
@@ -302,9 +263,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     public boolean areContentsTheSame(@NonNull @NotNull Integer oldItem, @NonNull @NotNull Integer newItem) {
                         return oldItem.intValue() == newItem.intValue();
                     }
-                });
-                selectAdapter.setData(players, defaultPos);
-                dialog.setAdapter(selectAdapter);
+                }, players, defaultPos);
                 dialog.show();
             }
         });
@@ -316,9 +275,9 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 ArrayList<Integer> renders = new ArrayList<>();
                 renders.add(0);
                 renders.add(1);
-                SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
+                SelectDialog<Integer> dialog = new SelectDialog<>(mActivity);
                 dialog.setTip("请选择默认渲染方式");
-                SelectDialogAdapter<Integer> selectAdapter = new SelectDialogAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
+                dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<Integer>() {
                     @Override
                     public void click(Integer value, int pos) {
                         Hawk.put(HawkConfig.PLAY_RENDER, value);
@@ -340,9 +299,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     public boolean areContentsTheSame(@NonNull @NotNull Integer oldItem, @NonNull @NotNull Integer newItem) {
                         return oldItem.intValue() == newItem.intValue();
                     }
-                });
-                selectAdapter.setData(renders, defaultPos);
-                dialog.setAdapter(selectAdapter);
+                }, renders, defaultPos);
                 dialog.show();
             }
         });
